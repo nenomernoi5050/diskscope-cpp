@@ -2,7 +2,9 @@
 
 DiskScope is a C++17 utility for authorized investigations of possible data
 leakage. It searches selected directories for policy markers and can inspect a
-previously acquired disk image for residual UTF-8 or UTF-16LE signatures.
+previously acquired disk image for residual UTF-8 or UTF-16LE signatures. A
+whole-disk image can contain remnants from deleted files, unallocated space and
+non-mounted areas; DiskScope searches those bytes without modifying the image.
 
 The project is a safe rewrite of an old filesystem experiment. The public
 version contains **no deletion, raw-volume writes, cluster overwriting, or
@@ -11,10 +13,11 @@ anti-forensic behavior**.
 ## What it does
 
 - recursively scans a directory without modifying files;
-- searches TXT, CSV, TSV, LOG, JSON, XML and Markdown documents;
+- searches TXT, CSV, TSV, LOG, JSON, XML, Markdown and exported REG files;
 - extracts searchable XML from DOCX, XLSX and PPTX containers;
 - performs case-insensitive Unicode matching for Latin and Cyrillic text;
 - scans an offline image for exact UTF-8 and UTF-16LE byte signatures;
+- scans offline Windows Registry hive files in the same exact-signature mode;
 - limits file and ZIP-entry sizes to reduce resource-exhaustion risk;
 - uses a bounded worker pool and produces a structured JSON report.
 
@@ -50,9 +53,20 @@ Inspect an offline image without mounting or modifying it:
 diskscope --image E:\evidence\workstation.img --keywords keywords.txt --report report.json
 ```
 
+Inspect an offline Registry hive such as `NTUSER.DAT`, `SYSTEM` or `SOFTWARE`:
+
+```powershell
+diskscope --hive E:\evidence\NTUSER.DAT --keywords keywords.txt --report registry-report.json
+```
+
 Image mode performs exact byte matching. Add case variants to the keyword file
 when they matter. Results identify offsets and encodings but do not reconstruct,
 delete, or overwrite data.
+
+Finding a surviving signature can support an investigation of deletion or
+partial overwriting, but it does not by itself prove intent. DiskScope does not
+reconstruct deleted filesystem records, parse Registry key structures, or scan
+areas that are absent from the acquired image.
 
 ## Safety boundary
 

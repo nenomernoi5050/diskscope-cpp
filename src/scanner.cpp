@@ -19,7 +19,7 @@ namespace diskscope {
 namespace {
 
 const std::unordered_set<std::string> kTextExtensions{
-    ".txt", ".csv", ".tsv", ".log", ".json", ".xml", ".md"
+    ".txt", ".csv", ".tsv", ".log", ".json", ".xml", ".md", ".reg"
 };
 const std::unordered_set<std::string> kOfficeExtensions{".docx", ".xlsx", ".pptx"};
 

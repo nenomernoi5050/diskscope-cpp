@@ -14,6 +14,7 @@ namespace {
 struct Arguments {
     std::filesystem::path root;
     std::filesystem::path image;
+    std::filesystem::path hive;
     std::filesystem::path keyword_file;
     std::filesystem::path report{"report.json"};
     diskscope::ScanOptions options;
@@ -24,6 +25,7 @@ void print_usage() {
         << "DiskScope 1.0 — authorized read-only content audit\n\n"
         << "Directory: diskscope --root PATH --keywords FILE [--report FILE]\n"
         << "Image:     diskscope --image FILE --keywords FILE [--report FILE]\n"
+        << "Registry:  diskscope --hive FILE --keywords FILE [--report FILE]\n"
         << "Options:   --threads N --max-file-mb N --max-findings N\n";
 }
 
@@ -41,6 +43,8 @@ Arguments parse_arguments(int argc, char** argv) {
             arguments.root = std::filesystem::u8path(value("--root"));
         } else if (option == "--image") {
             arguments.image = std::filesystem::u8path(value("--image"));
+        } else if (option == "--hive") {
+            arguments.hive = std::filesystem::u8path(value("--hive"));
         } else if (option == "--keywords") {
             arguments.keyword_file = std::filesystem::u8path(value("--keywords"));
         } else if (option == "--report") {
@@ -58,8 +62,12 @@ Arguments parse_arguments(int argc, char** argv) {
             throw std::runtime_error("unknown option: " + option);
         }
     }
-    if (arguments.keyword_file.empty() || (arguments.root.empty() == arguments.image.empty())) {
-        throw std::runtime_error("choose exactly one of --root or --image and provide --keywords");
+    const auto source_count = static_cast<int>(!arguments.root.empty()) +
+                              static_cast<int>(!arguments.image.empty()) +
+                              static_cast<int>(!arguments.hive.empty());
+    if (arguments.keyword_file.empty() || source_count != 1) {
+        throw std::runtime_error(
+            "choose exactly one of --root, --image or --hive and provide --keywords");
     }
     return arguments;
 }
@@ -95,11 +103,15 @@ int main(int argc, char** argv) {
         const auto arguments = parse_arguments(argc, argv);
         const auto keywords = load_keywords(arguments.keyword_file);
         const bool image_mode = !arguments.image.empty();
+        const bool hive_mode = !arguments.hive.empty();
         const auto result = image_mode
                                 ? diskscope::scan_image(arguments.image, keywords, arguments.options)
+                            : hive_mode
+                                ? diskscope::scan_image(arguments.hive, keywords, arguments.options)
                                 : diskscope::scan_directory(arguments.root, keywords, arguments.options);
-        diskscope::write_json_report(arguments.report, result,
-                                     image_mode ? "offline-image" : "directory");
+        diskscope::write_json_report(
+            arguments.report, result,
+            image_mode ? "offline-image" : hive_mode ? "offline-registry-hive" : "directory");
         std::cout << "Scanned: " << result.files_scanned << " file(s), "
                   << result.bytes_scanned << " byte(s)\n"
                   << "Findings: " << result.findings.size() << "\n"
@@ -112,4 +124,3 @@ int main(int argc, char** argv) {
         return 1;
     }
 }
-

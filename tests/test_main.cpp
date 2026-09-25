@@ -37,6 +37,27 @@ void test_directory_scan(const std::filesystem::path& root) {
     require(result.findings.size() == 1, "directory finding was not produced");
 }
 
+void test_registry_export_scan(const std::filesystem::path& root) {
+    const auto registry_root = root / "registry";
+    std::filesystem::create_directories(registry_root);
+    const auto target = registry_root / "policy.reg";
+    const std::u32string content =
+        U"Windows Registry Editor Version 5.00\r\n\"Marker\"=\"\u0414\u0421\u041f\"\r\n";
+    auto bytes = diskscope::encode_utf16le(content);
+    bytes.insert(bytes.begin(), {0xFF, 0xFE});
+    {
+        std::ofstream output(target, std::ios::binary);
+        output.write(reinterpret_cast<const char*>(bytes.data()),
+                     static_cast<std::streamsize>(bytes.size()));
+    }
+    const auto result = diskscope::scan_directory(registry_root, {"\xD0\xB4\xD1\x81\xD0\xBF"});
+    require(result.errors.empty(), "REG export scan returned an error");
+    require(result.files_scanned == 1, "REG export was not included in the scan");
+    require(result.findings.size() == 1, "UTF-16 REG export marker was not found");
+    require(result.findings.front().source.filename() == "policy.reg",
+            "REG finding points to the wrong source");
+}
+
 void test_image_scan(const std::filesystem::path& root) {
     const auto image = root / "sample.img";
     const std::string marker = "internal-only";
@@ -74,6 +95,7 @@ int main() {
     try {
         test_unicode_matcher();
         test_directory_scan(root);
+        test_registry_export_scan(root);
         test_image_scan(root);
         test_report();
         std::filesystem::remove_all(root, error);
@@ -85,4 +107,3 @@ int main() {
         return 1;
     }
 }
-
