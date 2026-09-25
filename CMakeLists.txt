@@ -15,7 +15,7 @@ set(INSTALL_PROJECT OFF CACHE BOOL "" FORCE)
 
 FetchContent_Declare(
   miniz
-  URL https://github.com/richgel999/miniz/archive/refs/tags/3.0.2.tar.gz
+  URL https://github.com/richgel999/miniz/archive/refs/tags/3.1.2.tar.gz
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(miniz)
@@ -44,4 +44,3 @@ enable_testing()
 add_executable(diskscope_tests tests/test_main.cpp)
 target_link_libraries(diskscope_tests PRIVATE diskscope_core)
 add_test(NAME diskscope_tests COMMAND diskscope_tests)
-

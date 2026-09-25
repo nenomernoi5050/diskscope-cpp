@@ -26,7 +26,7 @@ cmake --build build --config Release
 ctest --test-dir build -C Release --output-on-failure
 ```
 
-CMake downloads the pinned `miniz` 3.0.2 dependency during configuration.
+CMake downloads the pinned `miniz` 3.1.2 dependency during configuration.
 
 ## Usage
 
@@ -65,4 +65,3 @@ write handle.
 
 C++17 · CMake · Windows/Linux filesystem APIs · Miniz · OOXML · Unicode ·
 multithreading · JSON reporting · automated tests
-
